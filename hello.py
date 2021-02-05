@@ -42,13 +42,15 @@ normalizer = layers.experimental.preprocessing.Normalization()
 normalizer.adapt(np.array(train_features))
 
 # linear regression model
-model = tf.keras.Sequential([
-    normalizer,
-    layers.Dense(units=1)
+model = keras.Sequential([
+      normalizer,
+      layers.Dense(64, activation='relu'),
+      layers.Dense(64, activation='relu'),
+      layers.Dense(1)
 ])
 
 model.compile(
-    optimizer=tf.optimizers.Adam(learning_rate=0.1),
+    optimizer=tf.optimizers.Adam(learning_rate=0.001),
     loss='mean_absolute_error',
     metrics=['mae', 'mse'])
 
@@ -64,7 +66,7 @@ hist = pd.DataFrame(history.history)
 hist['epoch'] = history.epoch
 print(hist.tail())
 
-#plot_loss(history)
+plot_loss(history)
 
 test_dataset = test_features
 
