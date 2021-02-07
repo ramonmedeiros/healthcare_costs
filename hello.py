@@ -20,39 +20,30 @@ def plot_loss(history):
 dataset = pd.read_csv('insurance.csv')
 
 # map gender, smoker
-dataset['smoker'] = dataset['smoker'].map({0: "no", 1: 'yes'})
-dataset['sex'] = dataset['sex'].map({0: "female", 1: 'male'})
+dataset['smoker'] = dataset['smoker'].map({"no": 0, 'yes': 1})
 dataset = pd.get_dummies(dataset, prefix='', prefix_sep='')
+
+print(dataset.head())
 
 # split data
 train_dataset = dataset.sample(frac=0.8, random_state=0)
 test_dataset = dataset.drop(train_dataset.index)
 
-# info about dataset
-print(train_dataset.describe().transpose())
+# remove expenses
+train_labels = train_dataset.pop('expenses')
+test_labels = test_dataset.pop('expenses')
 
-# get features and labels
-train_features = train_dataset.copy()
-test_features = test_dataset.copy()
-
-train_labels = train_features.pop('expenses')
-test_labels = test_features.pop('expenses')
-
-# using multiple inputs
+# normalize data
 normalizer = layers.experimental.preprocessing.Normalization()
-normalizer.adapt(np.array(train_features))
+normalizer.adapt(np.array(train_dataset))
 
 # linear regression model
 model = keras.Sequential([
       normalizer,
-      layers.Dense(128, input_dim=1, activation='relu'),
-      layers.Dropout(.2),
-      layers.Activation("linear"),
       layers.Dense(64, activation='relu'),
       layers.Dense(64, activation='relu'),
       layers.Dense(1)
-])
-
+  ])
 model.compile(
     optimizer=tf.optimizers.Adam(learning_rate=0.001),
     loss=tf.losses.MeanAbsoluteError(),
@@ -60,18 +51,15 @@ model.compile(
 
 model.summary()
 
-history = model.fit(x=train_features, y=train_labels,
-                    epochs=30,
+history = model.fit(x=train_dataset, y=train_labels,
+                    epochs=300,
                     verbose=0,
                     validation_split = 0.2)  # Calculate validation results on 20% of the training data
 
 # plot loss
 hist = pd.DataFrame(history.history)
 hist['epoch'] = history.epoch
-print(hist.tail())
 plot_loss(history)
-
-test_dataset = test_features
 
 # RUN THIS CELL TO TEST YOUR MODEL. DO NOT MODIFY CONTENTS.
 # Test model by checking how well the model generalizes using the test set.
