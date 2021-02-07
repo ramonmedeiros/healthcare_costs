@@ -11,7 +11,7 @@ def plot_loss(history):
   plt.plot(history.history['loss'], label='loss')
   plt.plot(history.history['val_loss'], label='val_loss')
   plt.xlabel('Epoch')
-  plt.ylabel('Error [MPG]')
+  plt.ylabel('Error [Expenses]')
   plt.legend()
   plt.grid(True)
   plt.show()
@@ -31,11 +31,12 @@ test_dataset = dataset.drop(train_dataset.index)
 # info about dataset
 print(train_dataset.describe().transpose())
 
-# get features and labels 
+# get features and labels
 train_features = train_dataset.copy()
-train_labels = train_features.pop("expenses")
 test_features = test_dataset.copy()
-test_labels = test_features.pop("expenses")
+
+train_labels = train_features.pop('expenses')
+test_labels = test_features.pop('expenses')
 
 # using multiple inputs
 normalizer = layers.experimental.preprocessing.Normalization()
@@ -44,6 +45,9 @@ normalizer.adapt(np.array(train_features))
 # linear regression model
 model = keras.Sequential([
       normalizer,
+      layers.Dense(128, input_dim=1, activation='relu'),
+      layers.Dropout(.2),
+      layers.Activation("linear"),
       layers.Dense(64, activation='relu'),
       layers.Dense(64, activation='relu'),
       layers.Dense(1)
@@ -51,21 +55,20 @@ model = keras.Sequential([
 
 model.compile(
     optimizer=tf.optimizers.Adam(learning_rate=0.001),
-    loss='mean_absolute_error',
-    metrics=['mae', 'mse'])
+    loss=tf.losses.MeanAbsoluteError(),
+    metrics=[tf.metrics.MeanAbsoluteError(), tf.metrics.MeanSquaredError()])
 
 model.summary()
 
 history = model.fit(x=train_features, y=train_labels,
-                    epochs=100,
+                    epochs=30,
                     verbose=0,
                     validation_split = 0.2)  # Calculate validation results on 20% of the training data
 
-# parse results
+# plot loss
 hist = pd.DataFrame(history.history)
 hist['epoch'] = history.epoch
 print(hist.tail())
-
 plot_loss(history)
 
 test_dataset = test_features
